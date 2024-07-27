@@ -3,7 +3,7 @@ let score = 0;
 let lives = 3;
 let currentProblem = {};
 let zombiePosition = -20;
-let zombieSpeed = 0.2;
+let zombieSpeed = 0.1;
 let isFiring = false;
 let isGameStarted = false;
 let isPaused = false;
@@ -108,7 +108,7 @@ function startGame() {
     score = 0;
     lives = 3;
     zombiePosition = 20;
-    zombieSpeed = 0.2;
+    zombieSpeed = 0.1;
     difficulty = 1;
     combo = 0;
     isFirstZombie = true;
@@ -320,7 +320,7 @@ function fireCannon() {
 function increaseDifficulty() {
     if (score > difficulty * 100) {
         difficulty++;
-        zombieSpeed += 0.02;
+        zombieSpeed += 0.01;
     }
 }
 
