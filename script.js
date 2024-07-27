@@ -12,9 +12,10 @@ let combo = 0;
 let highScore = 0;
 let gameStartTime = 0;
 let isFirstZombie = true;
-let gameDuration = 120000; // 2 minutes in milliseconds
+let gameDuration = 120000;
 let timeRemaining = gameDuration;
 let chronometerInterval;
+let isZombieVisible = false;
 
 // Audio elements
 let backgroundMusic;
@@ -78,20 +79,27 @@ numButtons.forEach(button => {
     });
 });
 
-answerInput.addEventListener('keydown', handleKeyboardInput);
+// Add keyboard input handling
+document.addEventListener('keydown', handleKeyboardInput);
 
-// Function to handle keyboard input
 function handleKeyboardInput(e) {
-    if (e.key === 'Enter') {
-        checkAnswer();
+    if (!isGameStarted || isPaused) return;
+
+    if (e.key >= '0' && e.key <= '9') {
+        answerInput.value += e.key;
     } else if (e.key === 'Backspace') {
-        // Allow backspace to remove characters
-        return;
-    } else if (!/^[0-9]$/.test(e.key)) {
-        // Prevent non-numeric input
-        e.preventDefault();
+        answerInput.value = answerInput.value.slice(0, -1);
+    } else if (e.key === 'Enter') {
+        checkAnswer();
     }
 }
+
+// Prevent default behavior for number keys
+answerInput.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+    }
+});
 
 // Game functions
 function startGame() {
@@ -99,18 +107,19 @@ function startGame() {
     playBackgroundMusic();
     score = 0;
     lives = 3;
-    zombiePosition = -20;
+    zombiePosition = 20;
     zombieSpeed = 0.1;
     difficulty = 1;
     combo = 0;
     isFirstZombie = true;
     timeRemaining = gameDuration;
+    isZombieVisible = false;
     updateScore();
     updateLives();
     updateChronometer();
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
-    isGameStarted = false; // Set to false initially
+    isGameStarted = false;
     isPaused = false;
     showStartCountdown();
 }
@@ -120,16 +129,18 @@ function spawnZombie() {
     updateZombiePosition();
     generateProblem();
     showZombieAndEquation();
+    isZombieVisible = true;
 }
 
 function hideZombieAndEquation() {
-    zombieContainer.style.visibility = 'hidden';
-    equationBubble.style.visibility = 'hidden';
+    zombieContainer.style.display = 'none';
+    equationBubble.style.display = 'none';
+    isZombieVisible = false;
 }
 
 function showZombieAndEquation() {
-    zombieContainer.style.visibility = 'visible';
-    equationBubble.style.visibility = 'visible';
+    zombieContainer.style.display = 'block';
+    equationBubble.style.display = 'block';
 }
 
 function showStartCountdown() {
@@ -175,7 +186,7 @@ function generateProblem() {
             break;
         case '-':
             num1 = Math.floor(Math.random() * (10 * difficulty)) + 1;
-            num2 = Math.floor(Math.random() * num1) + 1; // Ensure num2 is less than or equal to num1
+            num2 = Math.floor(Math.random() * num1) + 1;
             break;
         case 'x':
             num1 = Math.floor(Math.random() * (5 * difficulty)) + 1;
@@ -199,7 +210,10 @@ function checkAnswer() {
         combo++;
         updateScore();
         fireCannon();
-        spawnZombie();
+        hideZombieAndEquation();
+        setTimeout(() => {
+            spawnZombie();
+        }, 500);
         increaseDifficulty();
     } else {
         lives--;
@@ -223,19 +237,22 @@ function updateZombiePosition() {
 function gameLoop(timestamp) {
     if (!isGameStarted || isPaused) return;
 
-    const elapsedTime = Date.now() - gameStartTime;
+    if (isZombieVisible) {
+        zombiePosition += zombieSpeed;
+        updateZombiePosition();
 
-    zombiePosition += zombieSpeed;
-    updateZombiePosition();
-
-    if (zombiePosition >= 80) {
-        lives--;
-        combo = 0;
-        updateLives();
-        if (lives === 0) {
-            endGame();
-        } else {
-            spawnZombie();
+        if (zombiePosition >= 100) {
+            lives--;
+            combo = 0;
+            updateLives();
+            if (lives === 0) {
+                endGame();
+            } else {
+                hideZombieAndEquation();
+                setTimeout(() => {
+                    spawnZombie();
+                }, 500);
+            }
         }
     }
 
@@ -294,7 +311,7 @@ function fireCannon() {
 function increaseDifficulty() {
     if (score > difficulty * 100) {
         difficulty++;
-        zombieSpeed += 0.02;
+        zombieSpeed += 0.01;
     }
 }
 
