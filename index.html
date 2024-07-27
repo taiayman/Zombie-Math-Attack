@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Math Attack</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-scene">
+            <div id="background"></div>
+            <div id="zombie-container">
+                <div id="zombie">
+                    <div class="zombie-eye left"></div>
+                    <div class="zombie-eye right"></div>
+                    <div class="zombie-mouth"></div>
+                </div>
+                <div id="equation-bubble"></div>
+            </div>
+            <div id="cannon-container">
+                <div id="cannon">
+                    <div id="cannon-barrel"></div>
+                </div>
+            </div>
+        </div>
+        <div id="ui-overlay">
+            <div id="top-ui">
+                <div id="lives"></div>
+                <div id="score">0</div>
+                <div id="chronometer">02:00</div>
+                <button id="pause-btn">⏸️</button>
+            </div>
+            <div id="bottom-ui">
+                <div id="answer-section">
+                    <div id="answer-container">
+                        <input type="text" id="answer-input" readonly>
+                        <button id="clear-btn">Clear</button>
+                    </div>
+                    <button id="attack-btn">Attack!</button>
+                </div>
+                <div id="numpad">
+                    <button class="num-btn">1</button>
+                    <button class="num-btn">2</button>
+                    <button class="num-btn">3</button>
+                    <button class="num-btn">4</button>
+                    <button class="num-btn">5</button>
+                    <button class="num-btn">6</button>
+                    <button class="num-btn">7</button>
+                    <button class="num-btn">8</button>
+                    <button class="num-btn">9</button>
+                    <button class="num-btn">0</button>
+                </div>
+            </div>
+        </div>
+        <div id="start-screen">
+            <h1>Zombie Math</h1>
+            <p>Solve math problems to defend against the zombie horde!</p>
+            <button id="start-btn">Start Game</button>
+        </div>
+        <div id="game-over-screen" class="hidden">
+            <h2>Game Over</h2>
+            <p>Your score: <span id="final-score"></span></p>
+            <p>High score: <span id="high-score"></span></p>
+            <button id="restart-btn">Play Again</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
