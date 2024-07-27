@@ -11,6 +11,7 @@
     --font-family: 'Poppins', sans-serif;
 }
 
+
 body, html {
     margin: 0;
     padding: 0;
@@ -245,10 +246,12 @@ body, html {
 #lives {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .heart {
-    font-size: 28px;
+    font-size: 36px;
+    line-height: 1;
     animation: heartbeat 1s infinite alternate ease-in-out;
 }
 
@@ -256,6 +259,7 @@ body, html {
     0% { transform: scale(1); }
     100% { transform: scale(1.1); }
 }
+
 
 #score {
     font-family: var(--font-family);
@@ -323,11 +327,15 @@ body, html {
 #pause-btn {
     background: none;
     border: none;
-    font-size: 28px;
+    width: 48px;
+    height: 46px;
     cursor: pointer;
     pointer-events: auto;
     transition: transform 0.2s ease;
-    color: var(--text-color);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 1;
 }
 
 #pause-btn:hover {
@@ -519,7 +527,6 @@ body, html {
         height: 15px;
         bottom: 25px;
     }
-
     #equation-bubble {
         font-size: 24px;
         padding: 10px 15px;
@@ -528,9 +535,9 @@ body, html {
     #cannon {
         width: 80px;
         height: 60px;
-        bottom: 33px;
+        bottom: 45px;
     }
-
+    
     #cannon-barrel {
         width: 50px;
         height: 25px;
@@ -542,7 +549,7 @@ body, html {
     }
 
     .heart {
-        font-size: 24px;
+        font-size: 23px;
     }
 
     #score {
@@ -561,6 +568,8 @@ body, html {
         padding: 10px;
         flex-wrap: wrap;
         justify-content: center;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     #answer-section {
@@ -581,18 +590,30 @@ body, html {
     }
 
     #numpad {
+        display: flex;
         gap: 5px;
         margin-left: 0;
-        justify-content: center;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 10px;
+        flex-shrink: 0;
+        padding-left: 150px;
     }
 
-    .num-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 16px;
-        padding: 8px;
-        transform: none;
-        transition: background-color 0.2s ease;
+    #numpad::after {
+        content: '';
+        flex: 0 0 10px;
+    }
+
+    #bottom-ui::-webkit-scrollbar,
+    #numpad::-webkit-scrollbar {
+        display: none;
+    }
+
+    #bottom-ui,
+    #numpad {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 
     .num-btn:hover {
@@ -617,13 +638,16 @@ body, html {
 
 @media (min-width: 769px) {
     #bottom-ui {
-        padding: 15px;
-        justify-content: center;
+        padding: 10px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     #answer-section {
-        flex-grow: 0;
-        margin-right: 20px;
+        width: auto;
+        flex-shrink: 0;
+        margin-right: 10px;
     }
 
     #answer-container {
@@ -645,15 +669,16 @@ body, html {
         margin-left: 10px;
     }
 
-    #numpad {
-        gap: 10px;
+    .num-btn {
+        transition: background-color 0.2s ease, transform 0.2s ease;
     }
 
     .num-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 18px;
-        transition: background-color 0.2s ease, transform 0.2s ease;
+        width: 46px;
+        height: 46px;
+        font-size: 16px;
+        padding: 8px;
+        flex-shrink: 0;
     }
 
     .num-btn:hover {
