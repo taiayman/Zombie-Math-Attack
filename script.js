@@ -1,849 +1,358 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+// Game variables
+let score = 0;
+let lives = 3;
+let currentProblem = {};
+let zombiePosition = -20;
+let zombieSpeed = 0.1;
+let isFiring = false;
+let isGameStarted = false;
+let isPaused = false;
+let difficulty = 1;
+let combo = 0;
+let highScore = 0;
+let gameStartTime = 0;
+let isFirstZombie = true;
+let gameDuration = 120000;
+let timeRemaining = gameDuration;
+let chronometerInterval;
+let isZombieVisible = false;
 
-:root {
-    --primary-color: #1a237e;
-    --secondary-color: #ff4081;
-    --text-color: #ffffff;
-    --background-color: #121212;
-    --accent-color: #00bcd4;
-    --zombie-color: #4caf50;
-    --bubble-color: rgba(255, 255, 255, 0.1);
-    --font-family: 'Poppins', sans-serif;
+// Audio elements
+let backgroundMusic;
+let cannonSound;
+
+// DOM elements
+const gameContainer = document.getElementById('game-container');
+const zombieContainer = document.getElementById('zombie-container');
+const equationBubble = document.getElementById('equation-bubble');
+const scoreDisplay = document.getElementById('score');
+const livesDisplay = document.getElementById('lives');
+const answerInput = document.getElementById('answer-input');
+const clearBtn = document.getElementById('clear-btn');
+const attackBtn = document.getElementById('attack-btn');
+const numButtons = document.querySelectorAll('.num-btn');
+const startScreen = document.getElementById('start-screen');
+const gameOverScreen = document.getElementById('game-over-screen');
+const startBtn = document.getElementById('start-btn');
+const restartBtn = document.getElementById('restart-btn');
+const finalScoreDisplay = document.getElementById('final-score');
+const pauseBtn = document.getElementById('pause-btn');
+const cannonBarrel = document.getElementById('cannon-barrel');
+const chronometerDisplay = document.getElementById('chronometer');
+
+// Initialize audio
+function initAudio() {
+    backgroundMusic = new Audio('background-music.mp3');
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = 0.5;
+
+    cannonSound = new Audio('cannon-sound.mp3');
+    cannonSound.volume = 0.7;
 }
 
-
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    font-family: var(--font-family);
-    background-color: var(--background-color);
-    color: var(--text-color);
+// Play background music
+function playBackgroundMusic() {
+    backgroundMusic.play();
 }
 
-#game-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+// Pause background music
+function pauseBackgroundMusic() {
+    backgroundMusic.pause();
 }
 
-#game-scene {
-    position: relative;
-    width: 100%;
-    height: 100%;
+// Play cannon sound
+function playCannonSound() {
+    cannonSound.currentTime = 0;
+    cannonSound.play();
 }
 
-#background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('background.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
+// Event listeners
+startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', startGame);
+attackBtn.addEventListener('click', checkAnswer);
+clearBtn.addEventListener('click', clearAnswer);
+pauseBtn.addEventListener('click', togglePause);
 
-.floating-island {
-    position: absolute;
-    background-color: #4caf50;
-    border-radius: 50%;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-    animation: floatingAnimation 5s infinite alternate ease-in-out;
-}
+numButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        answerInput.value += button.textContent;
+    });
+});
 
-@keyframes floatingAnimation {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(-20px); }
-}
+// Add keyboard input handling
+document.addEventListener('keydown', handleKeyboardInput);
 
-#floating-island-1 {
-    width: 150px;
-    height: 150px;
-    top: 20%;
-    left: 10%;
-}
+function handleKeyboardInput(e) {
+    if (!isGameStarted || isPaused) return;
 
-#floating-island-2 {
-    width: 200px;
-    height: 200px;
-    top: 40%;
-    right: 15%;
-}
-
-#zombie-container {
-    position: absolute;
-    top: 60px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    height: 200px;
-    transition: top 0.05s linear;
-}
-
-#zombie {
-    width: 100%;
-    height: 100%;
-    background-image: url('zombie.png');
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: relative;
-}
-
-@keyframes zombieAnimation {
-    0% { transform: translateY(0) rotate(0deg); }
-    100% { transform: translateY(-10px) rotate(5deg); }
-}
-
-@keyframes zombieFall {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(60vh); }
-}
-
-#equation-bubble {
-    position: absolute;
-    top: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--bubble-color);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 20px;
-    white-space: nowrap;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-@keyframes bubbleAnimation {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.05); }
-}
-
-#cannon-container {
-    position: absolute;
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 5;
-}
-
-#cannon {
-    width: 120px;
-    height: 100px;
-    background-color: #455a64;
-    border-radius: 15px 15px 0 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    position: relative;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-}
-
-#cannon::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 20px;
-    background-color: #37474f;
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-}
-
-#cannon-barrel {
-    width: 70px;
-    height: 40px;
-    background-color: #78909c;
-    position: absolute;
-    top: -20px;
-    border-radius: 20px 20px 0 0;
-    transition: transform 0.2s ease-out;
-    z-index: 2;
-}
-
-#cannon-barrel::before {
-    content: '';
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    bottom: 0;
-    background-color: #90a4ae;
-    border-radius: 15px 15px 0 0;
-}
-
-@keyframes cannonFire {
-    0% { transform: translateY(0) rotate(0deg); }
-    20% { transform: translateY(-10px) rotate(-5deg); }
-    40% { transform: translateY(-5px) rotate(5deg); }
-    60% { transform: translateY(-8px) rotate(-3deg); }
-    80% { transform: translateY(-3px) rotate(2deg); }
-    100% { transform: translateY(0) rotate(0deg); }
-}
-
-#cannon-barrel.firing {
-    animation: cannonFire 0.5s ease-out;
-}
-
-@keyframes projectileAnimation {
-    0% { 
-        transform: translate(-50%, 100%) scale(0.5);
-        opacity: 1;
-    }
-    100% { 
-        transform: translate(-50%, -800%) scale(1.5);
-        opacity: 0;
+    if (e.key >= '0' && e.key <= '9') {
+        answerInput.value += e.key;
+    } else if (e.key === 'Backspace') {
+        answerInput.value = answerInput.value.slice(0, -1);
+    } else if (e.key === 'Enter') {
+        checkAnswer();
     }
 }
 
-.projectile {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background-color: var(--secondary-color);
-    border-radius: 50%;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1;
-    animation: projectileAnimation 0.5s ease-out;
+// Prevent default behavior for number keys
+answerInput.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+    }
+});
+
+// Game functions
+function startGame() {
+    initAudio();
+    playBackgroundMusic();
+    score = 0;
+    lives = 3;
+    zombiePosition = 20;
+    zombieSpeed = 0.1;
+    difficulty = 1;
+    combo = 0;
+    isFirstZombie = true;
+    timeRemaining = gameDuration;
+    isZombieVisible = false;
+    updateScore();
+    updateLives();
+    updateChronometer();
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    isGameStarted = false;
+    isPaused = false;
+    setInitialPauseButtonImage(); // Add this line
+    showStartCountdown();
 }
 
-@keyframes zombieHit {
-    0% { transform: translateY(0) rotate(0deg); }
-    25% { transform: translateY(-20px) rotate(-10deg); }
-    50% { transform: translateY(-10px) rotate(10deg); }
-    75% { transform: translateY(-15px) rotate(-5deg); }
-    100% { transform: translateY(0) rotate(0deg); }
-}
-
-#zombie.hit {
-    animation: zombieHit 0.5s ease-out;
-}
-
-#ui-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-#top-ui {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-}
-
-#lives {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.heart {
-    font-size: 36px;
-    line-height: 1;
-    animation: heartbeat 1s infinite alternate ease-in-out;
-}
-
-@keyframes heartbeat {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.1); }
+function setInitialPauseButtonImage() {
+    const pauseBtn = document.getElementById('pause-btn');
+    pauseBtn.style.backgroundImage = "url('pause.png')";
 }
 
 
-#score {
-    font-family: var(--font-family);
-    font-size: 28px;
-    font-weight: bold;
+
+function spawnZombie() {
+    zombiePosition = -20;
+    updateZombiePosition();
+    generateProblem();
+    showZombieAndEquation();
+    isZombieVisible = true;
 }
 
-#chronometer {
-    font-family: var(--font-family);
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--accent-color);
+function hideZombieAndEquation() {
+    zombieContainer.style.display = 'none';
+    equationBubble.style.display = 'none';
+    isZombieVisible = false;
 }
 
-#start-screen h1, #game-over-screen h2 {
-    font-family: var(--font-family);
-    font-weight: 700;
+function showZombieAndEquation() {
+    zombieContainer.style.display = 'block';
+    equationBubble.style.display = 'block';
 }
 
-#start-screen p, #game-over-screen p {
-    font-family: var(--font-family);
-    font-weight: 300;
+function showStartCountdown() {
+    let countdown = 3;
+    const countdownElement = document.createElement('div');
+    countdownElement.id = 'countdown';
+    countdownElement.style.position = 'absolute';
+    countdownElement.style.top = '50%';
+    countdownElement.style.left = '50%';
+    countdownElement.style.transform = 'translate(-50%, -50%)';
+    countdownElement.style.fontSize = '72px';
+    countdownElement.style.color = '#fff';
+    gameContainer.appendChild(countdownElement);
+
+    const countdownInterval = setInterval(() => {
+        if (countdown > 0) {
+            countdownElement.textContent = countdown;
+            countdown--;
+        } else {
+            countdownElement.textContent = 'Go!';
+            setTimeout(() => {
+                gameContainer.removeChild(countdownElement);
+                isGameStarted = true;
+                gameStartTime = Date.now();
+                spawnZombie();
+                startChronometer();
+                requestAnimationFrame(gameLoop);
+            }, 1000);
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
 }
 
-#start-btn, #restart-btn {
-    font-family: var(--font-family);
-    font-weight: 600;
-}
+function generateProblem() {
+    const operations = ['+', '-', 'x'];
+    const operation = operations[Math.floor(Math.random() * operations.length)];
+    let num1, num2;
 
-.num-btn, #clear-btn, #attack-btn {
-    font-family: var(--font-family);
-    font-weight: 400;
-}
-
-#answer-input {
-    font-family: var(--font-family);
-    font-weight: 400;
-}
-
-#difficulty-indicator {
-    font-family: var(--font-family);
-    font-weight: 400;
-}
-
-#settings-menu h2 {
-    font-family: var(--font-family);
-    font-weight: 600;
-}
-
-.setting-option label {
-    font-family: var(--font-family);
-    font-weight: 400;
-}
-
-#close-settings {
-    font-family: var(--font-family);
-    font-weight: 600;
-}
-
-.combo-indicator {
-    font-family: var(--font-family);
-    font-weight: 700;
-}
-
-#pause-btn {
-    background: none;
-    border: none;
-    width: 48px;
-    height: 46px;
-    cursor: pointer;
-    pointer-events: auto;
-    transition: transform 0.2s ease;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    opacity: 1;
-}
-
-#pause-btn:hover {
-    transform: scale(1.1);
-}
-
-#bottom-ui {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 20px;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#answer-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#answer-container {
-    display: flex;
-}
-
-#answer-input {
-    font-size: 18px;
-    padding: 12px;
-    border: none;
-    border-radius: 25px 0 0 25px;
-    pointer-events: auto;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    width: 80px;
-    outline: none;
-}
-
-#clear-btn {
-    padding: 12px 20px;
-    background-color: var(--accent-color);
-    color: var(--text-color);
-    border: none;
-    border-radius: 0 25px 25px 0;
-    cursor: pointer;
-    pointer-events: auto;
-    font-size: 16px;
-    transition: background-color 0.2s ease;
-}
-
-#clear-btn:hover {
-    background-color: #00acc1;
-}
-
-#attack-btn {
-    padding: 12px 24px;
-    background-color: var(--secondary-color);
-    color: var(--text-color);
-    border: none;
-    border-radius: 25px;
-    font-size: 16px;
-    cursor: pointer;
-    pointer-events: auto;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-    margin-left: 10px;
-}
-
-#attack-btn:hover {
-    background-color: #f50057;
-    transform: scale(1.05);
-}
-
-#numpad {
-    display: flex;
-    gap: 10px;
-    margin-left: 20px;
-}
-
-.num-btn {
-    padding: 12px;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    border: none;
-    border-radius: 50%;
-    font-size: 18px;
-    cursor: pointer;
-    pointer-events: auto;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.num-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-}
-
-#start-screen, #game-over-screen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 10;
-    backdrop-filter: blur(10px);
-}
-
-#start-screen h1, #game-over-screen h2 {
-    font-family: 'Roboto', sans-serif;
-    font-size: 72px;
-    color: var(--secondary-color);
-    margin-bottom: 20px;
-    text-shadow: 3px 3px 0 #000;
-    animation: titleAnimation 2s infinite alternate ease-in-out;
-}
-
-@keyframes titleAnimation {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.05); }
-}
-
-#start-screen p, #game-over-screen p {
-    font-size: 24px;
-    margin-bottom: 30px;
-    text-align: center;
-    max-width: 600px;
-}
-
-#start-btn, #restart-btn {
-    padding: 15px 30px;
-    background-color: var(--secondary-color);
-    color: var(--text-color);
-    border: none;
-    border-radius: 30px;
-    font-size: 24px;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-#start-btn:hover, #restart-btn:hover {
-    background-color: #f50057;
-    transform: scale(1.05);
-}
-
-.hidden {
-    display: none !important;
-}
-
-@media (max-width: 768px) {
-    #zombie {
-        width: 200px;
-        height: 260px;
+    switch (operation) {
+        case '+':
+            num1 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+            num2 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+            break;
+        case '-':
+            num1 = Math.floor(Math.random() * (10 * difficulty)) + 1;
+            num2 = Math.floor(Math.random() * num1) + 1;
+            break;
+        case 'x':
+            num1 = Math.floor(Math.random() * (5 * difficulty)) + 1;
+            num2 = Math.floor(Math.random() * (5 * difficulty)) + 1;
+            break;
     }
 
-    .zombie-eye {
-        width: 20px;
-        height: 20px;
-        top: 25px;
+    currentProblem = {
+        question: `${num1} ${operation} ${num2}`,
+        answer: operation === 'x' ? num1 * num2 : eval(`${num1} ${operation === 'x' ? '*' : operation} ${num2}`)
+    };
+
+    equationBubble.textContent = currentProblem.question;
+    answerInput.value = '';
+}
+
+function checkAnswer() {
+    const userAnswer = parseInt(answerInput.value);
+    if (userAnswer === currentProblem.answer) {
+        score += 10 * difficulty * (1 + combo * 0.1);
+        combo++;
+        updateScore();
+        fireCannon();
+        hideZombieAndEquation();
+        setTimeout(() => {
+            spawnZombie();
+        }, 500);
+        increaseDifficulty();
+    } else {
+        lives--;
+        combo = 0;
+        updateLives();
+        if (lives === 0) {
+            endGame();
+        }
+    }
+    answerInput.value = '';
+}
+
+function clearAnswer() {
+    answerInput.value = '';
+}
+
+function updateZombiePosition() {
+    zombieContainer.style.top = `${zombiePosition}%`;
+}
+
+function gameLoop(timestamp) {
+    if (!isGameStarted || isPaused) return;
+
+    if (isZombieVisible) {
+        zombiePosition += zombieSpeed;
+        updateZombiePosition();
+
+        if (zombiePosition >= 100) {
+            lives--;
+            combo = 0;
+            updateLives();
+            if (lives === 0) {
+                endGame();
+            } else {
+                hideZombieAndEquation();
+                setTimeout(() => {
+                    spawnZombie();
+                }, 500);
+            }
+        }
     }
 
-    .zombie-eye::after {
-        width: 10px;
-        height: 10px;
-    }
-
-    .zombie-eye.left {
-        left: 20px;
-    }
-
-    .zombie-eye.right {
-        right: 20px;
-    }
-
-    .zombie-mouth {
-        width: 50px;
-        height: 15px;
-        bottom: 25px;
-    }
-    #equation-bubble {
-        font-size: 24px;
-        padding: 10px 15px;
-    }
-
-    #cannon {
-        width: 80px;
-        height: 60px;
-        bottom: 45px;
-    }
-    
-    #cannon-barrel {
-        width: 50px;
-        height: 25px;
-        top: -12px;
-    }
-
-    #top-ui {
-        padding: 10px;
-    }
-
-    .heart {
-        font-size: 23px;
-    }
-
-    #score {
-        font-size: 24px;
-    }
-
-    #chronometer {
-        font-size: 24px;
-    }
-
-    #pause-btn {
-        font-size: 24px;
-    }
-
-    #bottom-ui {
-        padding: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    #answer-section {
-        width: 100%;
-        justify-content: center;
-        margin-bottom: 10px;
-    }
-
-    #answer-input {
-        font-size: 16px;
-        padding: 10px;
-        width: 60px;
-    }
-
-    #clear-btn, #attack-btn {
-        font-size: 14px;
-        padding: 10px 15px;
-    }
-
-    #numpad {
-        display: flex;
-        gap: 5px;
-        margin-left: 0;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 10px;
-        flex-shrink: 0;
-        padding-left: 150px;
-    }
-
-    #numpad::after {
-        content: '';
-        flex: 0 0 10px;
-    }
-
-    #bottom-ui::-webkit-scrollbar,
-    #numpad::-webkit-scrollbar {
-        display: none;
-    }
-
-    #bottom-ui,
-    #numpad {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    .num-btn:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-        transform: none;
-    }
-
-    #start-screen h1, #game-over-screen h2 {
-        font-size: 48px;
-    }
-
-    #start-screen p, #game-over-screen p {
-        font-size: 18px;
-        margin-bottom: 20px;
-    }
-
-    #start-btn, #restart-btn {
-        padding: 12px 24px;
-        font-size: 20px;
+    if (isGameStarted) {
+        requestAnimationFrame(gameLoop);
     }
 }
 
-@media (min-width: 769px) {
-    #bottom-ui {
-        padding: 10px;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+function updateScore() {
+    scoreDisplay.textContent = Math.floor(score);
+}
 
-    #answer-section {
-        width: auto;
-        flex-shrink: 0;
-        margin-right: 10px;
-    }
+function updateLives() {
+    const livesContainer = document.getElementById('lives');
+    livesContainer.innerHTML = Array(lives).fill('<span class="heart">❤️</span>').join('');
+}
 
-    #answer-container {
-        width: auto;
+function endGame() {
+    isGameStarted = false;
+    pauseBackgroundMusic();
+    gameOverScreen.classList.remove('hidden');
+    finalScoreDisplay.textContent = Math.floor(score);
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
     }
+    document.getElementById('high-score').textContent = Math.floor(highScore);
+    stopChronometer();
+}
 
-    #answer-input {
-        width: 80px;
-        font-size: 18px;
-        padding: 10px;
-    }
-
-    #clear-btn, #attack-btn {
-        font-size: 16px;
-        padding: 10px 15px;
-    }
-
-    #attack-btn {
-        margin-left: 10px;
-    }
-
-    .num-btn {
-        transition: background-color 0.2s ease, transform 0.2s ease;
-    }
-
-    .num-btn {
-        width: 46px;
-        height: 46px;
-        font-size: 16px;
-        padding: 8px;
-        flex-shrink: 0;
-    }
-
-    .num-btn:hover {
-        background-color: rgba(255, 255, 255, 0.2);
-        transform: scale(1.05);
+function togglePause() {
+    isPaused = !isPaused;
+    const pauseBtn = document.getElementById('pause-btn');
+    if (isPaused) {
+        pauseBtn.style.backgroundImage = "url('play.png')";
+        stopChronometer();
+        pauseBackgroundMusic();
+    } else {
+        pauseBtn.style.backgroundImage = "url('pause.png')";
+        gameStartTime = Date.now() - (gameDuration - timeRemaining);
+        requestAnimationFrame(gameLoop);
+        startChronometer();
+        playBackgroundMusic();
     }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+
+
+function fireCannon() {
+    if (!isFiring) {
+        isFiring = true;
+        cannonBarrel.classList.add('firing');
+        playCannonSound();
+        setTimeout(() => {
+            cannonBarrel.classList.remove('firing');
+            isFiring = false;
+        }, 500);
+    }
 }
 
-@keyframes slideInFromBottom {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+function increaseDifficulty() {
+    if (score > difficulty * 100) {
+        difficulty++;
+        zombieSpeed += 0.01;
+    }
 }
 
-@keyframes pulseGlow {
-    0% { box-shadow: 0 0 5px var(--accent-color); }
-    50% { box-shadow: 0 0 20px var(--accent-color); }
-    100% { box-shadow: 0 0 5px var(--accent-color); }
+function startChronometer() {
+    chronometerInterval = setInterval(() => {
+        if (!isPaused) {
+            timeRemaining -= 1000;
+            updateChronometer();
+            if (timeRemaining <= 0) {
+                endGame();
+            }
+        }
+    }, 1000);
 }
 
-#start-screen, #game-over-screen {
-    animation: fadeIn 0.5s ease-out;
+function stopChronometer() {
+    clearInterval(chronometerInterval);
 }
 
-#bottom-ui {
-    animation: slideInFromBottom 0.5s ease-out;
+function updateChronometer() {
+    const minutes = Math.floor(timeRemaining / 60000);
+    const seconds = Math.floor((timeRemaining % 60000) / 1000);
+    chronometerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-#attack-btn {
-    animation: pulseGlow 2s infinite;
-}
-
-.progress-container {
-    width: 100%;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    margin-top: 10px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    width: 0%;
-    height: 10px;
-    background-color: var(--accent-color);
-    border-radius: 15px;
-    transition: width 0.3s ease-out;
-}
-
-#difficulty-indicator {
-    font-size: 18px;
-    margin-top: 10px;
-    text-align: center;
-}
-
-.power-up {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--accent-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
-    color: var(--text-color);
-    box-shadow: 0 0 10px var(--accent-color);
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.power-up:hover {
-    transform: scale(1.1);
-}
-
-#settings-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: var(--text-color);
-    cursor: pointer;
-    margin-left: 20px;
-    transition: transform 0.2s ease;
-}
-
-#settings-btn:hover {
-    transform: scale(1.1);
-}
-
-#settings-menu {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    padding: 20px;
-    border-radius: 10px;
-    z-index: 100;
-    display: none;
-}
-
-#settings-menu.active {
-    display: block;
-    animation: fadeIn 0.3s ease-out;
-}
-
-#settings-menu h2 {
-    color: var(--text-color);
-    margin-bottom: 20px;
-}
-
-.setting-option {
-    margin-bottom: 15px;
-}
-
-.setting-option label {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--text-color);
-}
-
-.setting-option input[type="range"] {
-    width: 100%;
-}
-
-#close-settings {
-    background-color: var(--secondary-color);
-    color: var(--text-color);
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 20px;
-}
-
-#close-settings:hover {
-    background-color: #f50057;
-}
-
-.particle {
-    position: absolute;
-    background-color: var(--secondary-color);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-@keyframes particleAnimation {
-    0% { transform: translate(0, 0); opacity: 1; }
-    100% { transform: translate(var(--end-x), var(--end-y)); opacity: 0; }
-}
-
-.combo-indicator {
-    position: absolute;
-    font-size: 24px;
-    color: var(--accent-color);
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-    animation: comboAnimation 1s ease-out;
-}
-
-@keyframes comboAnimation {
-    0% { transform: scale(0.5); opacity: 0; }
-    50% { transform: scale(1.2); opacity: 1; }
-    100% { transform: scale(1); opacity: 0; }
-}
+// Initialize the game
+highScore = localStorage.getItem('highScore') || 0;
+updateScore();
+updateLives();
+updateChronometer();
+hideZombieAndEquation();
