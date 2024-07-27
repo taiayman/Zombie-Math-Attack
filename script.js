@@ -3,7 +3,7 @@ let score = 0;
 let lives = 3;
 let currentProblem = {};
 let zombiePosition = -20;
-let zombieSpeed = 0.1;
+let zombieSpeed = 0.2;
 let isFiring = false;
 let isGameStarted = false;
 let isPaused = false;
@@ -30,7 +30,7 @@ const livesDisplay = document.getElementById('lives');
 const answerInput = document.getElementById('answer-input');
 const clearBtn = document.getElementById('clear-btn');
 const attackBtn = document.getElementById('attack-btn');
-const numButtons = document.querySelectorAll('.num-btn');
+const numButtons = document.querySelectorAll('#left-numpad .num-btn, #right-numpad .num-btn');
 const startScreen = document.getElementById('start-screen');
 const gameOverScreen = document.getElementById('game-over-screen');
 const startBtn = document.getElementById('start-btn');
@@ -108,7 +108,7 @@ function startGame() {
     score = 0;
     lives = 3;
     zombiePosition = 20;
-    zombieSpeed = 0.1;
+    zombieSpeed = 0.2;
     difficulty = 1;
     combo = 0;
     isFirstZombie = true;
@@ -121,7 +121,7 @@ function startGame() {
     gameOverScreen.classList.add('hidden');
     isGameStarted = false;
     isPaused = false;
-    setInitialPauseButtonImage(); // Add this line
+    setInitialPauseButtonImage();
     showStartCountdown();
 }
 
@@ -129,8 +129,6 @@ function setInitialPauseButtonImage() {
     const pauseBtn = document.getElementById('pause-btn');
     pauseBtn.style.backgroundImage = "url('pause.png')";
 }
-
-
 
 function spawnZombie() {
     zombiePosition = -20;
@@ -249,7 +247,7 @@ function gameLoop(timestamp) {
         zombiePosition += zombieSpeed;
         updateZombiePosition();
 
-        if (zombiePosition >= 100) {
+        if (zombiePosition >= 65) {
             lives--;
             combo = 0;
             updateLives();
@@ -307,8 +305,6 @@ function togglePause() {
     }
 }
 
-
-
 function fireCannon() {
     if (!isFiring) {
         isFiring = true;
@@ -324,7 +320,7 @@ function fireCannon() {
 function increaseDifficulty() {
     if (score > difficulty * 100) {
         difficulty++;
-        zombieSpeed += 0.01;
+        zombieSpeed += 0.02;
     }
 }
 
